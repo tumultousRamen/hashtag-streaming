@@ -7,6 +7,8 @@ export class HashtagProcessor {
     private recentPosts: SocialMediaPost[];
     private readonly windowSize: number = 3600000; // 1 hour
     private readonly updateInterval: number = 10000; // 10 seconds
+    private readonly MAX_MESSAGE_LENGTH = 280;
+    private readonly MAX_HASHTAGS_PER_MESSAGE = 30;
 
     constructor() {
         this.hashtagAI = new HashtagAI();
@@ -33,10 +35,25 @@ export class HashtagProcessor {
         );
     }
 
+    private isValidMessage(message: string): boolean {
+        if (!message || typeof message !== 'string') return false;
+        if (message.length > this.MAX_MESSAGE_LENGTH) return false;
+        
+        const hashtags = this.hashtagAI.extractHashtags(message);
+        if (hashtags.length > this.MAX_HASHTAGS_PER_MESSAGE) return false;
+        
+        return true;
+    }
+
     public processMessage(message: string): HashtagTrend[] {
         console.log('Processing new message:', message);
 
         try {
+            if (!this.isValidMessage(message)) {
+                console.log('Invalid message:', message);
+                return [];
+            }
+
             const newPost: SocialMediaPost = {
                 id: Date.now().toString(),
                 text: message,
@@ -48,6 +65,8 @@ export class HashtagProcessor {
             console.log('Extracted hashtags:', newPost.hashtags);
 
             this.recentPosts.push(newPost);
+            this.cleanupOldPosts(); // Ensure we clean up before processing
+            
             console.log('Total posts in memory:', this.recentPosts.length);
 
             return this.getTopTrends();
@@ -64,6 +83,8 @@ export class HashtagProcessor {
     }
 
     public getTopTrends(limit: number = 10): HashtagTrend[] {
+        this.cleanupOldPosts(); // Ensure we clean up before getting trends
+
         if (this.recentPosts.length === 0) {
             console.log('No posts to analyze');
             return [];

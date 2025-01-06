@@ -4,7 +4,12 @@ describe('HashtagProcessor', () => {
     let processor: HashtagProcessor;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         processor = new HashtagProcessor();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     describe('processMessage', () => {
@@ -38,11 +43,13 @@ describe('HashtagProcessor', () => {
     });
 
     describe('cleanup', () => {
-        it('should clean up old posts', async () => {
+        it('should clean up old posts', () => {
+
             processor.processMessage('#test');
+        
+            jest.advanceTimersByTime(3600001); 
             
-            // Fast-forward time
-            jest.advanceTimersByTime(3600001);
+            processor['cleanupOldPosts'](); 
             
             const trends = processor.getTopTrends();
             expect(trends).toEqual([]);
