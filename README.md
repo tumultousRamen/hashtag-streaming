@@ -75,13 +75,13 @@ VITE_BACKEND_URL=http://localhost:3000
 docker-compose up -d kafka
 ```
 
-2. Start the backend:
+2. Start the backend: (in a standalone terminal)
 ```bash
 cd backend
 npm run dev
 ```
 
-3. Start the frontend:
+3. Start the frontend: (in a standalone terminal)
 ```bash
 cd frontend
 npm run dev
