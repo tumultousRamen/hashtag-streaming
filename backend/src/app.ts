@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { KafkaConsumer } from './services/KafkaConsumer';
-import { HashtagProcessor } from './services/HashTagProcessor';
+import { HashtagProcessor } from './services/HashtagProcessor';
 import config from './config';
 
 const app = express();
