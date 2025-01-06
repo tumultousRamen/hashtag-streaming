@@ -1,7 +1,7 @@
 export interface SocialMediaPost {
     id: string;
     text: string;
-    source: 'twitter' | 'mock' | 'instagram';
+    source: 'twitter' | 'mock' | 'instagram' | 'test';
     timestamp: Date;
     hashtags: string[];
 }

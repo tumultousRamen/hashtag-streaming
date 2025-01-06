@@ -1,30 +1,84 @@
-// src/App.tsx
-import React, { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import React, { useEffect, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { HashtagTrend } from '../../backend/src/models/HashtagTrend';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
-const socket = io('http://localhost:3000');
+const SOCKET_URL = 'http://localhost:3000';
 
 const App: React.FC = () => {
     const [trends, setTrends] = useState<HashtagTrend[]>([]);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<string>('disconnected');
 
+    // Initialize socket connection
     useEffect(() => {
-        // Listen for real-time updates
-        socket.on('trends', (newTrends: HashtagTrend[]) => {
+        const newSocket = io(SOCKET_URL, {
+            withCredentials: true,
+            transports: ['websocket'],
+            timeout: 10000,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+
+        // Socket event handlers
+        newSocket.on('connect', () => {
+            console.log('Connected to WebSocket');
+            setConnectionStatus('connected');
+        });
+
+        newSocket.on('disconnect', () => {
+            console.log('Disconnected from WebSocket');
+            setConnectionStatus('disconnected');
+        });
+
+        newSocket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            setConnectionStatus('error');
+        });
+
+        newSocket.on('trends', (newTrends: HashtagTrend[]) => {
+            console.log('Received new trends:', newTrends);
             setTrends(newTrends);
         });
 
+        setSocket(newSocket);
+
         // Cleanup on unmount
         return () => {
-            socket.off('trends');
+            if (newSocket) {
+                newSocket.close();
+            }
         };
+    }, []);
+
+    // Fetch initial data using REST API
+    useEffect(() => {
+        const fetchInitialTrends = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/trends');
+                if (!response.ok) throw new Error('Failed to fetch trends');
+                const data = await response.json();
+                setTrends(data);
+            } catch (error) {
+                console.error('Error fetching initial trends:', error);
+            }
+        };
+
+        fetchInitialTrends();
     }, []);
 
     return (
         <div className="App">
             <header className="bg-blue-600 text-white p-4">
                 <h1 className="text-2xl font-bold">Trending Hashtags</h1>
+                <div className={`text-sm ${
+                    connectionStatus === 'connected' ? 'text-green-300' :
+                    connectionStatus === 'error' ? 'text-red-300' :
+                    'text-yellow-300'
+                }`}>
+                    Status: {connectionStatus}
+                </div>
             </header>
             
             <main className="p-4">
